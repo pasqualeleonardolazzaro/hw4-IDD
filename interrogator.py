@@ -98,7 +98,7 @@ def find_tables(xml_data, data_json, percorso_file_json):
             foots = xml_tree.xpath(f"//table-wrap[@id= '{tab}' ]/table-wrap-foot")               
             if len(caption) > 0 :
                 html_caption = lxml.etree.tostring(caption[0], encoding='unicode')
-                cleaned_caption = unwrap(html_caption, "caption")
+                cleaned_caption = unwrap(html_caption, "caption")   
             else :
                     cleaned_caption = ""
             if len(body) > 0 :
@@ -174,10 +174,11 @@ for file in os.listdir(XML_files_directory):
     # Aprire il file XML
     with open(percorso_file, 'r') as f:
         xml_data = f.read()
-    find_PMCID(xml_data)
-    percorso_file_json = os.path.join(Json_files_directory, file_json)
+    #find_PMCID(xml_data)
+    percorso_file_json = os.path.join(Json_files_directory, "pmcid_5023793.json")
     with open(percorso_file_json, 'r') as f:
         data = json.load(f)
+    print(xml_data)
     find_title(xml_data, data, percorso_file_json)
     find_abstract(xml_data, data, percorso_file_json)
     find_keywords(xml_data, data, percorso_file_json)

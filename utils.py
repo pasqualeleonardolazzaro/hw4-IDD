@@ -1,6 +1,30 @@
 XML_files_directory = "C:\\Users\\paleo\\OneDrive - Universita degli Studi Roma Tre\\Desktop\\Unimio\\OneDrive - Universita degli Studi Roma Tre\\magistrale\\Secondo Anno\\Ingegneria dei Dati\\Homework\\homework4\\XML_files"
-Json_files_directory = "C:\\Users\\paleo\\OneDrive - Universita degli Studi Roma Tre\\Desktop\\Unimio\\OneDrive - Universita degli Studi Roma Tre\\magistrale\\Secondo Anno\\Ingegneria dei Dati\\Homework\\homework4\\JSON_definitivi"
+Json_files_directory = "C:\\Users\\paleo\\OneDrive - Universita degli Studi Roma Tre\\Desktop\\Unimio\\OneDrive - Universita degli Studi Roma Tre\\magistrale\\Secondo Anno\\Ingegneria dei Dati\\Homework\\homework4\\JSON_files"
 from bs4 import BeautifulSoup
+import re, lxml
+from lxml import etree
+def remove_unicode(text):
+    return text.encode('ascii', 'ignore').decode('ascii').strip('\n')
+
+def get_clean_tag_soup(query_result):
+    if query_result is not None and len(query_result) > 0:
+        return _get_clean_tag_soup(query_result[0])
+    return BeautifulSoup("", 'html.parser')
+
+def _get_clean_tag_soup(elem):
+    soup = BeautifulSoup(lxml.etree.tostring(elem, method='xml'), 'html.parser').find(True)
+    # clear tag
+    del soup['xmlns:mml']
+    del soup['xmlns:xlink']
+
+    return soup
+
+def get_clean_tag_string(query_result):
+    return remove_unicode(str(get_clean_tag_soup(query_result)))
+
+def _get_clean_tag_string(elem):
+    return remove_unicode(str(_get_clean_tag_soup(elem)))
+
 def unwrap(html, unwrapping_content) :
     # Parsing dell'HTML
     soup_body = BeautifulSoup(html, 'html.parser')
@@ -50,24 +74,29 @@ def find_caption_citations(caption) :
     return rid_values
 
 def find_cells(table_body, xml_data) :
+    root = etree.fromstring(xml_data)
     # Parsing dell'HTML con BeautifulSoup
     soup = BeautifulSoup(table_body, 'html.parser')
     soup2 = BeautifulSoup(xml_data, 'xml')
     # Estrazione di tutte le celle che non sono nell'intestazione
     data_cells=[]
-    for cell in soup.find_all('td'):
-        if cell not in data_cells :
-            data_cells.append(cell.text.strip())
+    for row in soup.find_all('tr'):
+        row_cells = [remove_unicode(cell.get_text(strip=True)) for cell in row.find_all(['th', 'td'])]
+        data_cells.extend(row_cells)
     #per ogni cella fai un dizionario cella --> lista paragrafi
     cellToPar = {}
     for cell in data_cells :
          # Trova tutti gli elementi <p> che contengono cell
-        target_paragraphs = [str(paragraph) for paragraph in soup2.find_all('p', text=lambda text: cell in (text if text else ''))]
-        if target_paragraphs:
-            cellToPar[cell] = target_paragraphs
+        target_paragraphs = root.xpath("//p[contains(string(.), $target_text)]", target_text=cell)
+        cleaned_target_paragraphs = []
+        for t in target_paragraphs :
+            cleaned_target_paragraphs.append(_get_clean_tag_string(t))
+        if cleaned_target_paragraphs:
+            cellToPar[cell] = cleaned_target_paragraphs
         else :
             cellToPar[cell] = []
     return cellToPar
+
 
 def build_source(xlink_href_value, pmcid) : 
     return f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/{xlink_href_value}.jpg"
