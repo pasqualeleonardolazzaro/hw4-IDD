@@ -71,7 +71,13 @@ def find_caption_citations(caption) :
     bibr_elements = soup.find_all('xref', {'ref-type': 'bibr'})
     # Lista dei valori di rid per il paragrafo corrente
     rid_values = [bibr_element.get('rid') for bibr_element in bibr_elements]
-    return rid_values
+    ref_elements = []
+    for r in rid_values :
+        ref_elements += soup.find_all('ref', id=lambda value: r in value)
+    ref_elements_string = []
+    for ref_elem in ref_elements :
+        ref_elements_string.append(str(ref_elem))
+    return ref_elements_string
 
 def find_cells(table_body, xml_data) :
     root = etree.fromstring(xml_data)
@@ -84,7 +90,7 @@ def find_cells(table_body, xml_data) :
         row_cells = [remove_unicode(cell.get_text(strip=True)) for cell in row.find_all(['th', 'td'])]
         data_cells.extend(row_cells)
     #per ogni cella fai un dizionario cella --> lista paragrafi
-    cellToPar = {}
+    cellToPar = []
     for cell in data_cells :
          # Trova tutti gli elementi <p> che contengono cell
         target_paragraphs = root.xpath("//p[contains(string(.), $target_text)]", target_text=cell)
@@ -92,9 +98,9 @@ def find_cells(table_body, xml_data) :
         for t in target_paragraphs :
             cleaned_target_paragraphs.append(_get_clean_tag_string(t))
         if cleaned_target_paragraphs:
-            cellToPar[cell] = cleaned_target_paragraphs
+            cellToPar.append((cell, cleaned_target_paragraphs))
         else :
-            cellToPar[cell] = []
+            cellToPar.append((cell, []))
     return cellToPar
 
 

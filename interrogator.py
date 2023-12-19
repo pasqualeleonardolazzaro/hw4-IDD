@@ -115,9 +115,9 @@ def find_tables(xml_data, data_json, percorso_file_json):
             data_json["content"]["tables"].append( {"table_id": tab, "body": cleaned_body, "caption" : cleaned_caption, "caption_citations": caption_citations, "foots": foots_list, "paragraphs":[], "cells" : []})
             for p in pToRef.keys() :
                     data_json["content"]["tables"][i]["paragraphs"].append({"text" : p , "citations" : pToRef.get(p) })
-            for c in cellToPar.keys() :
+            for (c, ps) in cellToPar :
                     if c!="" :
-                        data_json["content"]["tables"][i]["cells"].append({"content" : c , "cited_in" : cellToPar.get(c) })
+                        data_json["content"]["tables"][i]["cells"].append({"content" : c , "cited_in" : ps })
             i+=1      
         # Write the updated data back to the JSON file
         with open(percorso_file_json, 'w') as f:
@@ -127,7 +127,6 @@ def find_tables(xml_data, data_json, percorso_file_json):
 #funzione che trova le figure
 def find_figures(xml_data, data_json, percorso_file_json):
     xml_tree = lxml.etree.fromstring(xml_data)
-    #print(article_abstract[0].xpath("string()"))
     fig_ids = xml_tree.xpath('//fig/@id')
     #Fare una interroìgazione XPath
     if fig_ids and ("figures" not in data_json["content"]) :
@@ -174,11 +173,10 @@ for file in os.listdir(XML_files_directory):
     # Aprire il file XML
     with open(percorso_file, 'r') as f:
         xml_data = f.read()
-    #find_PMCID(xml_data)
-    percorso_file_json = os.path.join(Json_files_directory, "pmcid_5023793.json")
+    find_PMCID(xml_data)
+    percorso_file_json = os.path.join(Json_files_directory, file_json)
     with open(percorso_file_json, 'r') as f:
         data = json.load(f)
-    print(xml_data)
     find_title(xml_data, data, percorso_file_json)
     find_abstract(xml_data, data, percorso_file_json)
     find_keywords(xml_data, data, percorso_file_json)
